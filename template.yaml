@@ -1,0 +1,92 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: blog-notes - AI-generated daily commit summaries (posts table + backups)
+
+Resources:
+  # One item per post. Drafts and published posts live in the same table.
+  #   Table key: project (PK) + date (SK, ISO YYYY-MM-DD) -> exactly one post
+  #   GSI:       status (PK) + date (SK)                  -> many posts per status
+  PostsTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain        # keep the table if the stack is deleted
+    UpdateReplacePolicy: Retain   # keep the old table if a change forces replacement
+    Properties:
+      # No TableName: CloudFormation generates one (see Outputs).
+      BillingMode: PAY_PER_REQUEST
+      DeletionProtectionEnabled: true
+      AttributeDefinitions:
+        - AttributeName: project
+          AttributeType: S
+        - AttributeName: date
+          AttributeType: S
+        - AttributeName: status
+          AttributeType: S
+      KeySchema:
+        - AttributeName: project
+          KeyType: HASH
+        - AttributeName: date
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: status-date-index
+          KeySchema:
+            - AttributeName: status
+              KeyType: HASH
+            - AttributeName: date
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+
+  # ---------- Weekly backups (kept 28 days -> ~4 backups) ----------
+  BackupVault:
+    Type: AWS::Backup::BackupVault
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BackupVaultName: !Sub "${AWS::StackName}-vault"
+
+  BackupPlan:
+    Type: AWS::Backup::BackupPlan
+    Properties:
+      BackupPlan:
+        BackupPlanName: !Sub "${AWS::StackName}-weekly"
+        BackupPlanRule:
+          - RuleName: weekly-posts
+            TargetBackupVault: !Ref BackupVault
+            ScheduleExpression: "cron(0 5 ? * SUN *)"   # Sundays 05:00 UTC
+            Lifecycle:
+              DeleteAfterDays: 28
+
+  BackupRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: backup.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForBackup
+        - arn:aws:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForRestores
+
+  BackupSelection:
+    Type: AWS::Backup::BackupSelection
+    Properties:
+      BackupPlanId: !Ref BackupPlan
+      BackupSelection:
+        SelectionName: posts-table
+        IamRoleArn: !GetAtt BackupRole.Arn
+        Resources:
+          - !GetAtt PostsTable.Arn
+
+Outputs:
+  PostsTableName:
+    Description: Generated name of the posts table
+    Value: !Ref PostsTable
+  PostsTableArn:
+    Description: ARN of the posts table
+    Value: !GetAtt PostsTable.Arn
+  BackupVaultName:
+    Description: Vault holding weekly backups
+    Value: !Ref BackupVault

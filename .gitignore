@@ -1,0 +1,10 @@
+# SAM build output
+.aws-sam/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp

@@ -1,6 +1,9 @@
 # SAM build output
 .aws-sam/
 
+# VibeWise learning notes (local only)
+.vibe-wise/
+
 # OS / editor
 .DS_Store
 Thumbs.db
@@ -8,4 +11,3 @@ desktop.ini
 .vscode/
 .idea/
 *.swp
-.vibewise/

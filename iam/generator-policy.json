@@ -1,0 +1,22 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "GeneratorPostsReadWriteNoDelete",
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:Query",
+        "dynamodb:GetItem",
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem"
+      ],
+      "Resource": "arn:aws:dynamodb:us-east-1:336757184020:table/blog-notes-PostsTable-*"
+    },
+    {
+      "Sid": "NoIndexAccess",
+      "Effect": "Deny",
+      "Action": "dynamodb:*",
+      "Resource": "arn:aws:dynamodb:us-east-1:336757184020:table/blog-notes-PostsTable-*/index/*"
+    }
+  ]
+}

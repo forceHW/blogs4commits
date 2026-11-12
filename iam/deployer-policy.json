@@ -19,8 +19,8 @@
         "cloudformation:DeleteStack"
       ],
       "Resource": [
-        "arn:aws:cloudformation:us-east-1:ACCOUNT_ID:stack/blog-notes/*",
-        "arn:aws:cloudformation:us-east-1:ACCOUNT_ID:stack/aws-sam-cli-managed-default/*"
+        "arn:aws:cloudformation:us-east-1:336757184020:stack/blog-notes/*",
+        "arn:aws:cloudformation:us-east-1:336757184020:stack/aws-sam-cli-managed-default/*"
       ]
     },
     {
@@ -80,8 +80,8 @@
         "dynamodb:ListTagsOfResource"
       ],
       "Resource": [
-        "arn:aws:dynamodb:us-east-1:ACCOUNT_ID:table/blog-notes-*",
-        "arn:aws:dynamodb:us-east-1:ACCOUNT_ID:table/blog-notes-*/index/*"
+        "arn:aws:dynamodb:us-east-1:336757184020:table/blog-notes-*",
+        "arn:aws:dynamodb:us-east-1:336757184020:table/blog-notes-*/index/*"
       ]
     },
     {
@@ -94,7 +94,7 @@
         "backup:UntagResource",
         "backup:ListTags"
       ],
-      "Resource": "arn:aws:backup:us-east-1:ACCOUNT_ID:backup-vault:blog-notes-*"
+      "Resource": "arn:aws:backup:us-east-1:336757184020:backup-vault:blog-notes-*"
     },
     {
       "Sid": "BackupVaultStorage",
@@ -130,7 +130,7 @@
         "backup:TagResource",
         "backup:ListTags"
       ],
-      "Resource": "arn:aws:backup:us-east-1:ACCOUNT_ID:backup-plan:*"
+      "Resource": "arn:aws:backup:us-east-1:336757184020:backup-plan:*"
     },
     {
       "Sid": "StackRolesManage",
@@ -142,23 +142,25 @@
         "iam:TagRole",
         "iam:UntagRole",
         "iam:ListAttachedRolePolicies",
-        "iam:ListRolePolicies"
+        "iam:ListRolePolicies",
+        "iam:UpdateAssumeRolePolicy"
       ],
-      "Resource": "arn:aws:iam::ACCOUNT_ID:role/blog-notes-*"
+      "Resource": "arn:aws:iam::336757184020:role/blog-notes-*"
     },
     {
-      "Sid": "StackRolesOnlyBackupManagedPolicies",
+      "Sid": "StackRolesOnlyApprovedManagedPolicies",
       "Effect": "Allow",
       "Action": [
         "iam:AttachRolePolicy",
         "iam:DetachRolePolicy"
       ],
-      "Resource": "arn:aws:iam::ACCOUNT_ID:role/blog-notes-*",
+      "Resource": "arn:aws:iam::336757184020:role/blog-notes-*",
       "Condition": {
         "ArnEquals": {
           "iam:PolicyARN": [
             "arn:aws:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForBackup",
-            "arn:aws:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForRestores"
+            "arn:aws:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForRestores",
+            "arn:aws:iam::336757184020:policy/blog-notes-generator"
           ]
         }
       }
@@ -167,8 +169,23 @@
       "Sid": "StackRolesPassOnlyToBackup",
       "Effect": "Allow",
       "Action": "iam:PassRole",
-      "Resource": "arn:aws:iam::ACCOUNT_ID:role/blog-notes-*",
+      "Resource": "arn:aws:iam::336757184020:role/blog-notes-*",
       "Condition": { "StringEquals": { "iam:PassedToService": "backup.amazonaws.com" } }
+    },
+    {
+      "Sid": "GitHubOidcProvider",
+      "Effect": "Allow",
+      "Action": [
+        "iam:CreateOpenIDConnectProvider",
+        "iam:GetOpenIDConnectProvider",
+        "iam:DeleteOpenIDConnectProvider",
+        "iam:TagOpenIDConnectProvider",
+        "iam:UntagOpenIDConnectProvider",
+        "iam:UpdateOpenIDConnectProviderThumbprint",
+        "iam:AddClientIDToOpenIDConnectProvider",
+        "iam:RemoveClientIDFromOpenIDConnectProvider"
+      ],
+      "Resource": "arn:aws:iam::336757184020:oidc-provider/token.actions.githubusercontent.com"
     }
   ]
 }

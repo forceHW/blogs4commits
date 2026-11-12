@@ -80,7 +80,40 @@ Resources:
         Resources:
           - !GetAtt PostsTable.Arn
 
+  # ---------- GitHub Actions identity (OIDC, no stored keys) ----------
+  # Lets AWS trust short-lived tokens issued by GitHub Actions.
+  GitHubOIDCProvider:
+    Type: AWS::IAM::OIDCProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList:
+        - sts.amazonaws.com
+
+  # Role the nightly generator workflow assumes. Only runs on the main
+  # branch of this repo can assume it. Its permissions come from the
+  # hand-created managed policy "blog-notes-generator" (iam/generator-policy.json).
+  GeneratorRole:
+    Type: AWS::IAM::Role
+    Properties:
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !Ref GitHubOIDCProvider
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+                token.actions.githubusercontent.com:sub: repo:forceHW/blogs4commits:ref:refs/heads/main
+      ManagedPolicyArns:
+        - !Sub "arn:aws:iam::${AWS::AccountId}:policy/blog-notes-generator"
+
 Outputs:
+  GeneratorRoleArn:
+    Description: Role ARN for the GitHub Actions generator (aws-actions/configure-aws-credentials role-to-assume)
+    Value: !GetAtt GeneratorRole.Arn
   PostsTableName:
     Description: Generated name of the posts table
     Value: !Ref PostsTable

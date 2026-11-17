@@ -1,0 +1,17 @@
+# Non-secret settings for the generator.
+# Secrets (OPENAI_API_KEY, GITHUB_TOKEN) come from environment variables / GitHub Actions secrets.
+
+[aws]
+region = "us-east-1"
+table_name = "blog-notes-PostsTable-WLPFS1TTE593"
+
+[github]
+username = "forceHW"
+
+[openai]
+model = "REPLACE_WITH_MODEL_ID"
+reasoning_effort = "medium"
+
+[schedule]
+timezone = "America/New_York"
+window_days = 2

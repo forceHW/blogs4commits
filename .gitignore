@@ -4,6 +4,11 @@
 # VibeWise learning notes (local only)
 .vibe-wise/
 
+# Python
+__pycache__/
+.venv/
+.pytest_cache/
+
 # OS / editor
 .DS_Store
 Thumbs.db

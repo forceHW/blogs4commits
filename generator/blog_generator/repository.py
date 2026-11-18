@@ -10,7 +10,7 @@ from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
 
 from .config import Config
-from .models import DRAFT, CommitEntry, Highlight, Post
+from .models import DRAFT, CommitEntry, Covered, Highlight, Post
 
 # "date" and "status" are DynamoDB reserved words, so every expression uses #placeholders.
 _NAMES = {
@@ -42,20 +42,22 @@ class PostRepository:
 
     # ---------- reads ----------
 
-    def covered_push_ids(self, project: str, from_date: str) -> set[str]:
-        """Push IDs already recorded on any post (draft or published) for project, date >= from_date."""
-        covered: set[str] = set()
+    def covered(self, project: str, from_date: str) -> Covered:
+        """Push IDs and commit SHAs already on any post (draft or published) for project, date >= from_date."""
+        push_ids: set[str] = set()
+        shas: set[str] = set()
         query: dict[str, Any] = {
             "KeyConditionExpression": Key("project").eq(project) & Key("date").gte(from_date),
-            "ProjectionExpression": "#push_ids",
-            "ExpressionAttributeNames": {"#push_ids": "push_ids"},
+            "ProjectionExpression": "#push_ids, #commits",
+            "ExpressionAttributeNames": {"#push_ids": "push_ids", "#commits": "commits"},
         }
         while True:
             page = self._table.query(**query)
             for item in page.get("Items", []):
-                covered |= set(item.get("push_ids", set()))
+                push_ids |= set(item.get("push_ids", set()))
+                shas |= {c["sha"] for c in item.get("commits", [])}
             if "LastEvaluatedKey" not in page:
-                return covered
+                return Covered(push_ids=push_ids, shas=shas)
             query["ExclusiveStartKey"] = page["LastEvaluatedKey"]
 
     def get_post(self, project: str, date: str) -> Post | None:

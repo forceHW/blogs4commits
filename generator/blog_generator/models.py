@@ -2,10 +2,32 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from datetime import datetime
 
 DRAFT = "draft"
 PUBLISHED = "published"
+
+
+@dataclass(frozen=True)
+class CommitRecord:
+    """One commit found by ingestion, before grouping or summarizing."""
+
+    push_id: str
+    project: str  # repo name, e.g. "blogs4commits"
+    repo_full_name: str  # owner/repo, e.g. "forceHW/blogs4commits" (agent tools need it)
+    sha: str
+    message: str
+    authored_at: datetime  # timezone-aware
+    forced: bool  # came from a force push (history was rewritten)
+
+
+@dataclass(frozen=True)
+class Covered:
+    """What earlier posts already include, for skipping repeats."""
+
+    push_ids: set[str]
+    shas: set[str]
 
 
 @dataclass

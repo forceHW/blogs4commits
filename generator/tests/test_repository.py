@@ -96,12 +96,12 @@ def test_add_commits_never_creates_a_post(repo):
     assert r.get_post("blogs4commits", "2026-01-01") is None
 
 
-def test_covered_push_ids_includes_drafts_and_published_and_respects_from_date(repo):
+def test_covered_includes_drafts_and_published_and_respects_from_date(repo):
     r, table = repo
-    r.create_draft(make_post(date="2026-11-14", push_ids=("old",)))
-    r.create_draft(make_post(date="2026-11-15", push_ids=("p1",)))
-    r.create_draft(make_post(date="2026-11-16", push_ids=("p2", "p3")))
-    r.create_draft(make_post(project="other-repo", date="2026-11-16", push_ids=("x1",)))
+    r.create_draft(make_post(date="2026-11-14", push_ids=("old",), sha="s-old"))
+    r.create_draft(make_post(date="2026-11-15", push_ids=("p1",), sha="s1"))
+    r.create_draft(make_post(date="2026-11-16", push_ids=("p2", "p3"), sha="s2"))
+    r.create_draft(make_post(project="other-repo", date="2026-11-16", push_ids=("x1",), sha="sx"))
     table.update_item(
         Key={"project": "blogs4commits", "date": "2026-11-15"},
         UpdateExpression="SET #s = :p",
@@ -109,4 +109,6 @@ def test_covered_push_ids_includes_drafts_and_published_and_respects_from_date(r
         ExpressionAttributeValues={":p": PUBLISHED},
     )
 
-    assert r.covered_push_ids("blogs4commits", "2026-11-15") == {"p1", "p2", "p3"}
+    covered = r.covered("blogs4commits", "2026-11-15")
+    assert covered.push_ids == {"p1", "p2", "p3"}
+    assert covered.shas == {"s1", "s2"}

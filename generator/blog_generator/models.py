@@ -42,6 +42,7 @@ class Highlight:
     file: str
     code: str  # verified to appear in the commit's diff
     explanation: str
+    sha: str = ""  # commit this highlight comes from
 
 
 @dataclass

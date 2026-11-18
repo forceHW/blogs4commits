@@ -41,6 +41,7 @@ class GitHubClient:
         if token:
             headers["Authorization"] = f"Bearer {token}"
         self._http = httpx.Client(base_url=GITHUB_API, headers=headers, transport=transport, timeout=30)
+        self._files_cache: dict[tuple[str, str], list[dict]] = {}
 
     def get(self, path: str, params: dict[str, Any] | None = None) -> httpx.Response:
         return self._http.get(path, params=params)
@@ -49,6 +50,20 @@ class GitHubClient:
         resp = self.get(path, params)
         resp.raise_for_status()
         return resp.json()
+
+    def commit_files(self, repo_full_name: str, sha: str) -> list[dict]:
+        """Changed files of one commit: [{filename, status, patch?}, ...]. Cached per run.
+
+        GitHub omits `patch` for binary or very large files.
+        """
+        key = (repo_full_name, sha)
+        if key not in self._files_cache:
+            self._files_cache[key] = self.get_json(f"/repos/{repo_full_name}/commits/{sha}").get("files", [])
+        return self._files_cache[key]
+
+    def contents(self, repo_full_name: str, path: str, ref: str) -> Any:
+        """File (dict with base64 `content`) or directory listing (list) at a commit."""
+        return self.get_json(f"/repos/{repo_full_name}/contents/{path.strip('/')}", {"ref": ref})
 
 
 def fetch_commits(client: GitHubClient, username: str, start: datetime, end: datetime) -> list[CommitRecord]:

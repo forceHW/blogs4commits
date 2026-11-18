@@ -9,7 +9,7 @@ table_name = "blog-notes-PostsTable-WLPFS1TTE593"
 username = "forceHW"
 
 [openai]
-model = "REPLACE_WITH_MODEL_ID"
+model = "gpt-6.2-sol"
 reasoning_effort = "medium"
 
 [schedule]

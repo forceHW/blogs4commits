@@ -49,6 +49,7 @@ class Service:
         report = RunReport()
         groups = self._new_commits_by_group(records, report)
         for (project, date), commits in sorted(groups.items()):
+            commits.sort(key=lambda r: r.authored_at)  # post lists commits in the order they were written
             label = f"{project} {date}"
             try:
                 self._process_group(project, date, commits, report)

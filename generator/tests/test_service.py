@@ -154,6 +154,12 @@ def test_dry_run_writes_nothing_and_previews_post():
     assert report.previewed[0].commits[0].summary == "did a"
 
 
+def test_commits_in_a_post_are_ordered_by_author_time():
+    repo, model = FakeRepo(), FakeModel()
+    service(repo, model).run([rec("later", "2026-11-16T16:00:00+00:00"), rec("earlier", "2026-11-16T15:00:00+00:00")])
+    assert [c.sha for c in repo.created[0].commits] == ["earlier", "later"]
+
+
 def test_force_pushed_flag_reaches_the_model():
     repo, model = FakeRepo(), FakeModel()
     service(repo, model).run([rec("a", forced=True)])
